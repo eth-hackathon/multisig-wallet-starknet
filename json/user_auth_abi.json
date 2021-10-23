@@ -1,0 +1,42 @@
+[
+    {
+        "inputs": [
+            {
+                "name": "user",
+                "type": "felt"
+            },
+            {
+                "name": "amount",
+                "type": "felt"
+            },
+            {
+                "name": "sig_r",
+                "type": "felt"
+            },
+            {
+                "name": "sig_s",
+                "type": "felt"
+            }
+        ],
+        "name": "increase_balance",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "user",
+                "type": "felt"
+            }
+        ],
+        "name": "get_balance",
+        "outputs": [
+            {
+                "name": "res",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]
