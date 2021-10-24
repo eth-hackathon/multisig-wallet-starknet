@@ -12,13 +12,20 @@ class Signer():
         return sign(msg_hash=message_hash,
             priv_key=self.private_key)
 
-    def build_transaction(self, account, to, selector_name,
+    def build_transaction(self, user, account, to, selector_name,
             calldata, nonce):
         selector = get_selector_from_name(selector_name)
         message_hash = hash_message(to, selector, calldata, nonce)
         (sig_r, sig_s) = self.sign(message_hash)
-        return account.execute(to, selector, calldata, nonce, sig_r,
-            sig_s)
+        return account.execute(
+            user,
+            to,
+            selector,
+            calldata,
+            nonce,
+            sig_r,
+            sig_s
+        )
 
 
 def hash_message(to, selector, calldata, nonce):

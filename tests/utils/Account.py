@@ -7,6 +7,7 @@ class Account():
     # Initialize with signer. Deploy separately.
     def __init__(self, private_key, L1_address):
         self.signer = Signer(private_key)
+        self.signer2 = Signer(private_key + 1)
         self.L1_address = L1_address
         self.address = 0
         self.contract = None
@@ -22,13 +23,14 @@ signer public key {pubkey[:6]}...{pubkey[-4:]}'
         contract = await starknet.deploy(ACCOUNT_PATH)
         self.contract = contract
         self.address = contract.contract_address
-        await contract.initialize(self.signer.public_key,
-            self.L1_address).invoke()
+        calldata=[self.signer.public_key, self.signer2.public_key]
+        await contract.initialize(calldata, 1, self.L1_address).invoke()
 
     # Transact. Signs and sends a transaction using latest nonce.
     async def tx_with_nonce(self, to, selector_name, calldata):
         (nonce, ) = await self.contract.get_nonce().call()
         transaction = await self.signer.build_transaction(
+            user=self.signer.public_key,
             account=self.contract,
             to=to,
             selector_name=selector_name,

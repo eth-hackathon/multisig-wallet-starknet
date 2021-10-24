@@ -27,7 +27,11 @@ func current_nonce() -> (res : felt):
 end
 
 @storage_var
-func public_key() -> (res : felt):
+func public_key(user : felt) -> (res : felt):
+end
+
+@storage_var
+func threshold() -> (res : felt):
 end
 
 @storage_var
@@ -38,15 +42,50 @@ end
 func L1_address() -> (res : felt):
 end
 
+@storage_var
+func approval_tx(user : felt) -> (res : felt):
+end
+
+@storage_var
+func is_pending() -> (res : felt):
+end
+
 @external
 func initialize{storage_ptr : Storage*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        _public_key : felt, _L1_address : felt):
+        calldata_len : felt, calldata : felt*, _threshold : felt, _L1_address : felt):
     let (_initialized) = initialized.read()
     assert _initialized = 0
     initialized.write(1)
 
-    public_key.write(_public_key)
+    let (_is_pending) = is_pending.read()
+    assert _is_pending = 0
+
+    _setOwners(calldata_len=calldata_len, calldata=calldata)
+    _setApproval(calldata_len=calldata_len, calldata=calldata)
+    threshold.write(_threshold)
     L1_address.write(_L1_address)
+    return ()
+end
+
+func _setOwners{storage_ptr : Storage*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        calldata_len : felt, calldata : felt*):
+    if calldata_len == 0:
+        return ()
+    end
+
+    public_key.write(calldata[0], calldata[0])
+    _setOwners(calldata_len=calldata_len - 1, calldata=calldata + 1)
+    return ()
+end
+
+func _setApproval{storage_ptr : Storage*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        calldata_len : felt, calldata : felt*):
+    if calldata_len == 0:
+        return ()
+    end
+
+    approval_tx.write(calldata[0], 0)
+    _setOwners(calldata_len=calldata_len - 1, calldata=calldata + 1)
     return ()
 end
 
@@ -80,7 +119,7 @@ end
 
 func validate{
         storage_ptr : Storage*, pedersen_ptr : HashBuiltin*, ecdsa_ptr : SignatureBuiltin*,
-        range_check_ptr}(signed_message : SignedMessage*):
+        range_check_ptr}(signed_message : SignedMessage*, user : felt):
     alloc_locals
 
     # validate nonce
@@ -94,7 +133,7 @@ func validate{
 
     # verify signature
     let (message) = hash_message(signed_message.message)
-    let (_public_key) = public_key.read()
+    let (_public_key) = public_key.read(user=user)
 
     verify_ecdsa_signature(
         message=message,
@@ -109,8 +148,8 @@ end
 func execute{
         storage_ptr : Storage*, pedersen_ptr : HashBuiltin*, ecdsa_ptr : SignatureBuiltin*,
         syscall_ptr : felt*, range_check_ptr}(
-        to : felt, selector : felt, calldata_len : felt, calldata : felt*, nonce : felt,
-        sig_r : felt, sig_s : felt) -> (response : felt):
+        user : felt, to : felt, selector : felt, calldata_len : felt, calldata : felt*,
+        nonce : felt, sig_r : felt, sig_s : felt) -> (response : felt):
     alloc_locals
 
     let (__fp__, _) = get_fp_and_pc()
@@ -120,7 +159,7 @@ func execute{
         &message, sig_r, sig_s)
 
     # validate transaction
-    validate(&signed_message)
+    validate(&signed_message, user)
 
     # bump nonce
     let (_current_nonce) = current_nonce.read()
@@ -141,9 +180,9 @@ end
 ###
 
 @view
-func get_public_key{storage_ptr : Storage*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-        res : felt):
-    let (res) = public_key.read()
+func get_public_key{storage_ptr : Storage*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        user : felt) -> (res : felt):
+    let (res) = public_key.read(user=user)
     return (res=res)
 end
 
