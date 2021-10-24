@@ -42,7 +42,6 @@ async def account_factory():
 async def application_factory(account_factory):
     starknet, accounts = account_factory
     application = await starknet.deploy("contracts/application.cairo")
-    print('deploy application contract')
     return starknet, accounts, application
 
 @pytest.mark.asyncio

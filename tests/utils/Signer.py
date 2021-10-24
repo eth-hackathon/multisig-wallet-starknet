@@ -17,6 +17,11 @@ class Signer():
         selector = get_selector_from_name(selector_name)
         message_hash = hash_message(to, selector, calldata, nonce)
         (sig_r, sig_s) = self.sign(message_hash)
+        print(f'Application contract address            : {to}')
+        print(f'Selector, hash name of function called  : {selector}')
+        print(f'Calldata for the transation, aka input  : {calldata}')
+        print(f'Nonce                                   : {nonce}')
+        print(f'message_hash, contain input and selector: {message_hash}')
         return account.execute(
             user,
             to,

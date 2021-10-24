@@ -2,6 +2,8 @@
 %builtins pedersen range_check ecdsa
 
 from starkware.cairo.common.hash import hash2
+from starkware.cairo.common.math_cmp import is_le
+from starkware.cairo.common.math import assert_le
 from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.signature import verify_ecdsa_signature
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
@@ -160,6 +162,24 @@ func execute{
 
     # validate transaction
     validate(&signed_message, user)
+
+    let (is_approved) = approval_tx.read(user=user)
+    assert is_approved = 0
+    approval_tx.write(user, 1)
+
+    let (_is_pending) = is_pending.read()
+    is_pending.write(_is_pending + 1)
+
+    let (_threshold) = threshold.read()
+
+    assert_le(_threshold, _is_pending + 1)
+
+    # let (is_reach) = is_le(_threshold, _is_pending + 1)
+
+    # threshold is not yet reach, do not execute the transaction
+    # if is_reach == 0:
+    #   return (response=0)
+    # end
 
     # bump nonce
     let (_current_nonce) = current_nonce.read()
